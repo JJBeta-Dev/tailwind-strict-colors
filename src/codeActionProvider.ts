@@ -6,6 +6,14 @@ import { rankSuggestions } from "./colorDistance";
 import { BURNED_COLOR_CODE, DIAGNOSTIC_SOURCE } from "./diagnostics";
 import { FIX_ALL_IN_FILE_COMMAND } from "./fixAllCommands";
 
+/**
+ * Provides two kinds of code action for burned-color diagnostics:
+ * - Per-diagnostic **Quick Fix** entries, one per ranked suggestion.
+ * - A single **Source Action** (`SourceFixAll`) that delegates to the
+ *   `tailwindStrictColors.fixAllInFile` command when the file has at least
+ *   one burned color — this is what powers the "Fix All" entry in the
+ *   Source Action menu.
+ */
 export class BurnedColorCodeActionProvider implements vscode.CodeActionProvider {
   static readonly providedCodeActionKinds = [
     vscode.CodeActionKind.QuickFix,
@@ -17,6 +25,7 @@ export class BurnedColorCodeActionProvider implements vscode.CodeActionProvider 
     private readonly getTheme: () => ParsedTheme
   ) {}
 
+  /** {@inheritDoc} */
   provideCodeActions(
     document: vscode.TextDocument,
     _range: vscode.Range,

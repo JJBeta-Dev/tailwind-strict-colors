@@ -7,9 +7,19 @@ import { registerFixAllCommands } from "./fixAllCommands";
 import { BurnedColorsWebviewProvider } from "./problemsWebviewProvider";
 import { registerHoverProvider } from "./hoverProvider";
 
+/** Debounce for re-scanning a single document as the user types. */
 const DEBOUNCE_MS = 300;
+/** Debounce for re-scanning the whole workspace after a save or a `@theme` change. */
 const WORKSPACE_SCAN_DEBOUNCE_MS = 500;
 
+/**
+ * Extension entry point. Wires a single {@link ThemeWatcher} and
+ * {@link DiagnosticsManager} to every feature (diagnostics, hover, quick
+ * fixes, Fix All commands, and the Activity Bar webview panel) — see
+ * `CLAUDE.md` for the full data-flow diagram.
+ *
+ * @param context - The extension context VS Code passes on activation.
+ */
 export function activate(context: vscode.ExtensionContext): void {
   let config: ExtensionConfig = readConfig();
   const themeWatcher = new ThemeWatcher(config.themeFileGlob);
@@ -96,17 +106,25 @@ export function activate(context: vscode.ExtensionContext): void {
 
     vscode.languages.registerCodeActionsProvider(
       config.languages,
-      new BurnedColorCodeActionProvider(() => config, () => themeWatcher.getTheme()),
+      new BurnedColorCodeActionProvider(
+        () => config,
+        () => themeWatcher.getTheme()
+      ),
       { providedCodeActionKinds: BurnedColorCodeActionProvider.providedCodeActionKinds }
     ),
 
-    ...registerFixAllCommands(() => config, () => themeWatcher.getTheme()),
-    ...registerHoverProvider(() => config, () => themeWatcher.getTheme())
+    ...registerFixAllCommands(
+      () => config,
+      () => themeWatcher.getTheme()
+    ),
+    ...registerHoverProvider(
+      () => config,
+      () => themeWatcher.getTheme()
+    )
   );
 
   for (const document of vscode.workspace.textDocuments) updateDocument(document);
 }
 
-export function deactivate(): void {
-  // All resources are disposed via context.subscriptions.
-}
+/** No-op: every resource created in {@link activate} is disposed via `context.subscriptions`. */
+export function deactivate(): void {}

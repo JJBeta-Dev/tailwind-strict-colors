@@ -1,0 +1,5 @@
+dist/
+out/
+media/codicons/
+node_modules/
+package-lock.json

@@ -5,6 +5,7 @@ import { ParsedTheme } from "./cssThemeParser";
 import { FileScanResult, scanWorkspace } from "./workspaceScan";
 import { FIX_ALL_IN_WORKSPACE_COMMAND } from "./fixAllCommands";
 
+/** One burned-color occurrence as rendered by `media/main.js`. */
 interface WebviewIssue {
   text: string;
   startLine: number;
@@ -13,6 +14,7 @@ interface WebviewIssue {
   endChar: number;
 }
 
+/** One file group as rendered by `media/main.js`. */
 interface WebviewFile {
   uriString: string;
   baseName: string;
@@ -20,6 +22,7 @@ interface WebviewFile {
   issues: WebviewIssue[];
 }
 
+/** Message sent from the webview when the user clicks an issue row (jump to that location). */
 interface OpenMessage {
   type: "open";
   uriString: string;
@@ -29,15 +32,22 @@ interface OpenMessage {
   endChar: number;
 }
 
+/** Every message shape the extension host accepts from `media/main.js`. */
 type WebviewMessage = { type: "ready" } | { type: "fixAll" } | OpenMessage;
 
+/** Shape of the `{ type: "update" }` message the extension host pushes to the webview. */
 interface WebviewPayload {
   files: WebviewFile[];
   themeTokenCount: number;
   themeFileGlob: string;
 }
 
-function toPayload(results: FileScanResult[], themeTokenCount: number, themeFileGlob: string): WebviewPayload {
+/** Serializes a workspace scan into the plain-data shape `media/main.js` renders. */
+function toPayload(
+  results: FileScanResult[],
+  themeTokenCount: number,
+  themeFileGlob: string
+): WebviewPayload {
   return {
     themeTokenCount,
     themeFileGlob,
@@ -64,6 +74,7 @@ function toPayload(results: FileScanResult[], themeTokenCount: number, themeFile
   };
 }
 
+/** Generates a random nonce for the webview's Content-Security-Policy script-src. */
 function getNonce(): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let text = "";
@@ -71,6 +82,12 @@ function getNonce(): string {
   return text;
 }
 
+/**
+ * Backs the "Colores quemados" Activity Bar panel: a webview (not a native
+ * `TreeView`) so it can render file-type icons, warning colors, and a
+ * search box that match the IDE's own look via `--vscode-*` CSS variables
+ * and bundled codicons (see `media/main.css`, `media/main.js`).
+ */
 export class BurnedColorsWebviewProvider implements vscode.WebviewViewProvider {
   private view?: vscode.WebviewView;
   private results: FileScanResult[] = [];
@@ -82,6 +99,7 @@ export class BurnedColorsWebviewProvider implements vscode.WebviewViewProvider {
     private readonly getTheme: () => ParsedTheme
   ) {}
 
+  /** {@inheritDoc} */
   resolveWebviewView(webviewView: vscode.WebviewView): void {
     this.view = webviewView;
     webviewView.webview.options = {
@@ -96,6 +114,12 @@ export class BurnedColorsWebviewProvider implements vscode.WebviewViewProvider {
     this.postUpdate();
   }
 
+  /**
+   * Re-scans the workspace and pushes the new results to the webview (if
+   * currently visible/resolved) and to the view's `description` label.
+   * Safe to call while a previous refresh is still running — the call is a
+   * no-op in that case rather than overlapping scans.
+   */
   async refresh(): Promise<void> {
     if (this.scanning) return;
     this.scanning = true;
@@ -111,10 +135,12 @@ export class BurnedColorsWebviewProvider implements vscode.WebviewViewProvider {
     }
   }
 
+  /** Total number of burned-color occurrences across the last completed scan. */
   getTotalIssueCount(): number {
     return this.results.reduce((sum, result) => sum + result.matches.length, 0);
   }
 
+  /** Sends the current scan results to the webview, if one is resolved. */
   private postUpdate(): void {
     if (!this.view) return;
     const config = this.getConfig();
@@ -122,6 +148,7 @@ export class BurnedColorsWebviewProvider implements vscode.WebviewViewProvider {
     this.view.webview.postMessage({ type: "update", payload });
   }
 
+  /** Dispatches a message received from `media/main.js` (see {@link WebviewMessage}). */
   private handleMessage(message: WebviewMessage): void {
     switch (message.type) {
       case "ready":
@@ -129,7 +156,12 @@ export class BurnedColorsWebviewProvider implements vscode.WebviewViewProvider {
         return;
       case "open": {
         const uri = vscode.Uri.parse(message.uriString);
-        const selection = new vscode.Range(message.startLine, message.startChar, message.endLine, message.endChar);
+        const selection = new vscode.Range(
+          message.startLine,
+          message.startChar,
+          message.endLine,
+          message.endChar
+        );
         vscode.window.showTextDocument(uri, { selection });
         return;
       }
@@ -139,6 +171,7 @@ export class BurnedColorsWebviewProvider implements vscode.WebviewViewProvider {
     }
   }
 
+  /** Builds the webview's HTML shell: a strict CSP, the codicon/main stylesheets, and `media/main.js`. */
   private buildHtml(webview: vscode.Webview): string {
     const nonce = getNonce();
     const mediaUri = (...segments: string[]) =>

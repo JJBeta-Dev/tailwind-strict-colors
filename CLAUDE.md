@@ -55,7 +55,7 @@ Separación estricta en dos capas:
      `themeFileGlob` en cada workspace folder, los parsea, y se re-parsea
      solo con un `FileSystemWatcher` (no en cada keystroke).
    - `diagnostics.ts` — pinta el subrayado amarillo + entradas en el panel
-     *Problems*, solo para documentos abiertos (debounce de 300ms en
+     _Problems_, solo para documentos abiertos (debounce de 300ms en
      `extension.ts` para no re-escanear en cada tecla).
    - `codeActionProvider.ts` — Quick Fix por diagnóstico (recalcula el match
      re-corriendo el scanner sobre el texto exacto del rango del
@@ -108,9 +108,9 @@ es intencional (ver "Decisiones no obvias").
 
 - `webview → extensión`: `{ type: "ready" }` (al cargar, pide el estado
   actual), `{ type: "open", uriString, startLine, startChar, endLine,
-  endChar }` (click en un issue → abre el archivo en esa selección).
+endChar }` (click en un issue → abre el archivo en esa selección).
 - `extensión → webview`: `{ type: "update", payload: { files, themeTokenCount,
-  themeFileGlob } }`. `themeTokenCount === 0` dispara el banner de "no se
+themeFileGlob } }`. `themeTokenCount === 0` dispara el banner de "no se
   encontró tu @theme" dentro del propio panel.
 
 ## Decisiones no obvias (el porqué)
@@ -119,7 +119,7 @@ es intencional (ver "Decisiones no obvias").
   deliberado: así funciona igual en `className`, `class`, `clsx()`, `cva()`,
   template strings, etc. sin tener que soportar la sintaxis de cada
   lenguaje. El costo es que puede haber falsos positivos raros (texto que
-  *parece* una clase de Tailwind pero no lo es dentro de un string
+  _parece_ una clase de Tailwind pero no lo es dentro de un string
   arbitrario); no ha sido un problema en la práctica.
 - **Un match solo se ignora si el token declarado coincide EXACTAMENTE con
   el nombre por defecto** (`--color-red-500` redefinido a mano). Esto
@@ -157,10 +157,22 @@ es intencional (ver "Decisiones no obvias").
 ```bash
 npm install          # instala devDependencies (aprueba el postinstall de esbuild si npm lo pide: `npm approve-scripts esbuild`)
 npm run typecheck    # tsc --noEmit
+npm run lint         # ESLint (flat config, eslint.config.js) — incluye eslint-plugin-tsdoc
 npm test             # node:test sobre src/test/*.test.ts — solo módulos "puros" (sin vscode)
 npm run build        # esbuild → dist/extension.js
 npm run watch        # esbuild en modo watch (útil con F5 / Extension Development Host)
+npm run format       # Prettier --write
+npm run verify       # typecheck + lint + format:check + test + build, en ese orden — correr antes de cada commit
 ```
+
+`npm run verify` es lo que corre `.github/workflows/ci.yml` en cada push/PR
+(más el empaquetado del `.vsix` al final, solo para detectar errores de
+empaquetado temprano). Todo comentario TSDoc pasa por `eslint-plugin-tsdoc`
+(regla `tsdoc/syntax`) — ojo con dos gotchas reales que ya mordieron a este
+proyecto: escribir `**/algo` dentro de un bloque `/** */` cierra el comentario
+antes de tiempo (contiene `*/` literal), y una mención suelta de `@theme` sin
+backticks se interpreta como un tag TSDoc no definido — hay que escribirla
+como `` `@theme` `` (en backticks) o `\@theme` si no puede ir en backticks.
 
 Para probar cambios en vivo: abre esta carpeta en Antigravity/VS Code y
 presiona `F5` → abre una ventana con `example/` cargada (ya tiene colores
@@ -181,20 +193,23 @@ Antigravity sin pasar por ninguna tienda:
 ```
 
 (En esta máquina: `C:\Users\JJBeta\AppData\Local\Programs\Antigravity IDE\bin\antigravity-ide.cmd`.)
-Después hay que recargar la ventana (`Ctrl+Shift+P` → *Reload Window*) para
+Después hay que recargar la ventana (`Ctrl+Shift+P` → _Reload Window_) para
 que tome la versión nueva.
 
 ## Cómo agregar algo nuevo (convención a seguir)
 
 1. Si la lógica se puede escribir sin importar `vscode`, ponla en un módulo
    nuevo o existente de la capa pura y agrégale tests en `src/test/`.
-2. La capa de `vscode` solo debe *orquestar* (leer config, registrar
+2. La capa de `vscode` solo debe _orquestar_ (leer config, registrar
    providers/comandos, convertir offsets ↔ `Position`/`Range`) — no debería
    tener lógica de negocio propia que valga la pena testear por separado.
 3. Si agregas un setting nuevo, va en tres lugares: `package.json`
    (`contributes.configuration.properties`), `config.ts` (`ExtensionConfig`
-   + `readConfig`), y donde se consuma.
-4. Corre `npm run typecheck && npm test && npm run build` antes de empaquetar.
+   - `readConfig`), y donde se consuma.
+4. Corre `npm run verify` antes de empaquetar o hacer commit.
+5. Todo símbolo exportado lleva TSDoc con `@param`/`@returns` y, si es una
+   función pura reutilizable, un `@example` — es la convención que se siguió
+   en todo `src/` y `eslint-plugin-tsdoc` la valida en CI.
 
 ## Limitaciones conocidas
 

@@ -60,12 +60,20 @@ test("bare keywords are ignored by default (white/black) unless removed from ign
 });
 
 test("multi-word utilities like ring-offset are matched over their shorter prefix", () => {
-  const matches = scanForBurnedColors('<div className="ring-offset-blue-500" />', DEFAULT_OPTIONS, EMPTY_THEME);
+  const matches = scanForBurnedColors(
+    '<div className="ring-offset-blue-500" />',
+    DEFAULT_OPTIONS,
+    EMPTY_THEME
+  );
   assert.equal(matches.length, 1);
   assert.equal(matches[0].utility, "ring-offset");
 });
 
 test("non-color utilities with numeric suffixes are not false positives", () => {
-  const matches = scanForBurnedColors('<div className="border-2 text-lg text-center" />', DEFAULT_OPTIONS, EMPTY_THEME);
+  const matches = scanForBurnedColors(
+    '<div className="border-2 text-lg text-center" />',
+    DEFAULT_OPTIONS,
+    EMPTY_THEME
+  );
   assert.equal(matches.length, 0);
 });

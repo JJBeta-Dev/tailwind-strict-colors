@@ -1,5 +1,8 @@
 # Tailwind Strict Colors
 
+[![CI](https://github.com/JJBeta-Dev/tailwind-strict-colors/actions/workflows/ci.yml/badge.svg)](https://github.com/JJBeta-Dev/tailwind-strict-colors/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Extensión para editores basados en VS Code (Antigravity incluido) que detecta
 clases de Tailwind CSS que usan un color de la **paleta default** (`bg-red-500`,
 `text-gray-200`, `border-white`, ...) en vez de un token definido en tu propio
@@ -16,7 +19,7 @@ proyecto: lee directamente el `@theme` de tu CSS.
 2. Escanea los archivos abiertos (`tailwindStrictColors.languages`) buscando
    utilidades de color (`bg-`, `text-`, `border-`, `ring-`, `fill-`, ...) que
    apunten a la paleta default de Tailwind y **no** estén declaradas como tuyas.
-3. Marca cada ocurrencia como advertencia en el panel *Problems* y en el
+3. Marca cada ocurrencia como advertencia en el panel _Problems_ y en el
    editor (subrayado ondulado amarillo).
 4. Ofrece varias formas de corregirlo:
    - **Quick Fix** (💡) con hasta N sugerencias (`maxSuggestions`).
@@ -44,10 +47,26 @@ npm install
 npm run build
 ```
 
+Scripts disponibles:
+
+| Script                 | Qué hace                                                        |
+| ---------------------- | --------------------------------------------------------------- |
+| `npm run build`        | Bundlea la extensión con esbuild → `dist/extension.js`.         |
+| `npm run watch`        | Igual, en modo watch (útil con `F5`).                           |
+| `npm run typecheck`    | `tsc --noEmit`.                                                 |
+| `npm test`             | Unit tests (`node:test`) de la lógica pura.                     |
+| `npm run lint`         | ESLint, incluida la validación de sintaxis TSDoc.               |
+| `npm run format`       | Formatea todo el repo con Prettier.                             |
+| `npm run format:check` | Verifica formato sin escribir (lo que corre en CI).             |
+| `npm run verify`       | Corre typecheck + lint + format:check + test + build, en orden. |
+
+CI (GitHub Actions, `.github/workflows/ci.yml`) corre `verify` + empaqueta un
+`.vsix` en cada push/PR.
+
 Luego, en Antigravity/VS Code:
 
 1. Abre esta carpeta (`tailwind-strict-colors`) como workspace.
-2. Presiona `F5` (o *Run Extension* en el panel de Run & Debug).
+2. Presiona `F5` (o _Run Extension_ en el panel de Run & Debug).
 3. Se abre una segunda ventana ("Extension Development Host") con la carpeta
    `example/` cargada — ahí ya hay clases quemadas de ejemplo en `Card.tsx`
    para probar la detección y el Quick Fix.
@@ -58,19 +77,19 @@ Luego, en Antigravity/VS Code:
 npx @vscode/vsce package
 ```
 
-Genera `tailwind-strict-colors-0.1.0.vsix`. En Antigravity: *Extensions* →
-`...` → *Install from VSIX...*.
+Genera `tailwind-strict-colors-0.1.0.vsix`. En Antigravity: _Extensions_ →
+`...` → _Install from VSIX..._.
 
 ## Configuración (`settings.json`)
 
-| Setting | Default | Descripción |
-|---|---|---|
-| `tailwindStrictColors.enable` | `true` | Activa/desactiva la extensión. |
-| `tailwindStrictColors.themeFileGlob` | `"**/index.css"` | Glob para encontrar tu archivo con `@theme`. |
-| `tailwindStrictColors.languages` | jsx/tsx/html/vue/svelte/astro | Lenguajes donde se escanean clases. |
-| `tailwindStrictColors.utilities` | `bg`, `text`, `border`, `ring`, ... | Prefijos de utilidades a inspeccionar. |
+| Setting                                  | Default                                       | Descripción                                     |
+| ---------------------------------------- | --------------------------------------------- | ----------------------------------------------- |
+| `tailwindStrictColors.enable`            | `true`                                        | Activa/desactiva la extensión.                  |
+| `tailwindStrictColors.themeFileGlob`     | `"**/index.css"`                              | Glob para encontrar tu archivo con `@theme`.    |
+| `tailwindStrictColors.languages`         | jsx/tsx/html/vue/svelte/astro                 | Lenguajes donde se escanean clases.             |
+| `tailwindStrictColors.utilities`         | `bg`, `text`, `border`, `ring`, ...           | Prefijos de utilidades a inspeccionar.          |
 | `tailwindStrictColors.ignoredColorNames` | `inherit, current, transparent, black, white` | Nombres "bare" (sin shade) que nunca se marcan. |
-| `tailwindStrictColors.maxSuggestions` | `5` | Máximo de sugerencias en el Quick Fix. |
+| `tailwindStrictColors.maxSuggestions`    | `5`                                           | Máximo de sugerencias en el Quick Fix.          |
 
 ## Estructura del proyecto
 
@@ -134,7 +153,7 @@ Si más adelante cambiás de namespace o de repo, actualizá esos dos campos en
 ### 1. Publicar en Open VSX (la que usa Antigravity)
 
 1. Entrá a **https://open-vsx.org**, iniciá sesión con tu cuenta de GitHub.
-2. En tu perfil → *Access Tokens* → generá un token nuevo y guardalo (no se
+2. En tu perfil → _Access Tokens_ → generá un token nuevo y guardalo (no se
    vuelve a mostrar).
 3. Si es la primera vez que usás ese namespace, reclamalo:
    ```bash
@@ -150,7 +169,7 @@ Si más adelante cambiás de namespace o de repo, actualizá esos dos campos en
    npx ovsx publish tailwind-strict-colors-<version>.vsix -p <tu-token>
    ```
 5. En unos minutos aparece en `https://open-vsx.org/extension/<namespace>/tailwind-strict-colors`
-   y ya es buscable desde el panel *Extensions* de Antigravity.
+   y ya es buscable desde el panel _Extensions_ de Antigravity.
 
 Para actualizar una versión más adelante: subí `"version"` en `package.json`
 (semver) y repetí el paso 4 — Open VSX no permite re-publicar la misma
@@ -162,7 +181,7 @@ Solo tiene sentido si además usás VS Code "de verdad" (no Antigravity) o
 querés distribuirla más ampliamente:
 
 1. Creá una organización en **https://dev.azure.com** y, dentro de ella, un
-   *Personal Access Token* con scope **Marketplace → Manage**.
+   _Personal Access Token_ con scope **Marketplace → Manage**.
 2. Creá el publisher (una sola vez):
    ```bash
    npx @vscode/vsce create-publisher <tu-publisher>

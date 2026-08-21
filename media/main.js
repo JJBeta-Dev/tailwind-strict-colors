@@ -1,24 +1,31 @@
+/**
+ * Client-side script for the "Colores quemados" webview panel
+ * (`problemsWebviewProvider.ts`). Renders whatever `{ type: "update" }`
+ * payload the extension host pushes, and reports clicks back via
+ * `vscode.postMessage`. No build step — loaded as-is by the webview.
+ */
 (function () {
   const vscode = acquireVsCodeApi();
   const root = document.getElementById("root");
   const searchInput = document.getElementById("search");
 
+  /** @type {{ files: Array<object>, themeTokenCount: number, themeFileGlob: string }} */
   let payload = { files: [], themeTokenCount: 1, themeFileGlob: "" };
   let filterText = "";
+  /** File URIs currently collapsed, persisted across webview hide/show via `vscode.setState`. */
   const collapsed = new Set(vscode.getState()?.collapsed ?? []);
 
+  /** Persists the collapsed-file set so it survives the webview being hidden and re-shown. */
   function persistState() {
     vscode.setState({ collapsed: [...collapsed] });
   }
 
+  /** Escapes text before interpolating it into `innerHTML`. */
   function escapeHtml(value) {
-    return value
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
+    return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
 
+  /** Renders one clickable issue row; `data-open` carries the payload for the "open" message. */
   function issueHtml(file, issue) {
     const openPayload = JSON.stringify({
       uriString: file.uriString,
@@ -35,6 +42,7 @@
       </div>`;
   }
 
+  /** Renders one collapsible file group with its badge count and issue rows. */
   function fileHtml(file) {
     const isCollapsed = collapsed.has(file.uriString);
     return `
@@ -50,6 +58,7 @@
       </div>`;
   }
 
+  /** Warning banner shown when the project's `@theme` has no tokens (see `themeFileGlob`). */
   function themeWarningHtml() {
     if (payload.themeTokenCount > 0) return "";
     return `
@@ -59,6 +68,7 @@
       </div>`;
   }
 
+  /** Shown when the workspace scan found zero burned colors. */
   function emptyStateHtml() {
     return `
       <div class="empty-state">
@@ -67,6 +77,7 @@
       </div>`;
   }
 
+  /** Re-renders the whole panel from `payload` + `filterText`, then rewires event listeners. */
   function render() {
     const warningBanner = themeWarningHtml();
 
@@ -91,7 +102,8 @@
       .filter((file) => file.issues.length > 0);
 
     if (visibleFiles.length === 0) {
-      root.innerHTML = warningBanner + `<div class="summary">Sin resultados para "${escapeHtml(filterText)}"</div>`;
+      root.innerHTML =
+        warningBanner + `<div class="summary">Sin resultados para "${escapeHtml(filterText)}"</div>`;
       return;
     }
 

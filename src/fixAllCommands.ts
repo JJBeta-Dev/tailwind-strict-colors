@@ -4,15 +4,26 @@ import { ParsedTheme } from "./cssThemeParser";
 import { computeAutoFix, Replacement } from "./autoFix";
 import { findScannableFiles } from "./workspaceScan";
 
+/** Command id: replaces every burned color in the active editor's document. */
 export const FIX_ALL_IN_FILE_COMMAND = "tailwindStrictColors.fixAllInFile";
+/** Command id: replaces every burned color across all matching files in the workspace. */
 export const FIX_ALL_IN_WORKSPACE_COMMAND = "tailwindStrictColors.fixAllInWorkspace";
 
+/** Converts {@link Replacement} offsets into `vscode.TextEdit`s for a specific document. */
 function toTextEdits(document: vscode.TextDocument, replacements: Replacement[]): vscode.TextEdit[] {
   return replacements.map((r) =>
-    vscode.TextEdit.replace(new vscode.Range(document.positionAt(r.start), document.positionAt(r.end)), r.replacement)
+    vscode.TextEdit.replace(
+      new vscode.Range(document.positionAt(r.start), document.positionAt(r.end)),
+      r.replacement
+    )
   );
 }
 
+/**
+ * Warns and returns `true` when the project's `@theme` has no tokens at all
+ * — the most common reason Fix All silently has nothing to suggest (the
+ * configured glob didn't find the user's CSS file).
+ */
 function warnIfThemeIsEmpty(config: ExtensionConfig, theme: ParsedTheme): boolean {
   if (theme.tokens.size > 0) return false;
   vscode.window.showWarningMessage(
@@ -22,10 +33,13 @@ function warnIfThemeIsEmpty(config: ExtensionConfig, theme: ParsedTheme): boolea
   return true;
 }
 
+/** Handler for {@link FIX_ALL_IN_FILE_COMMAND}. */
 async function fixAllInFile(getConfig: () => ExtensionConfig, getTheme: () => ParsedTheme): Promise<void> {
   const editor = vscode.window.activeTextEditor;
   if (!editor) {
-    vscode.window.showWarningMessage("Tailwind Strict Colors: abre un archivo primero para poder reemplazar sus colores quemados.");
+    vscode.window.showWarningMessage(
+      "Tailwind Strict Colors: abre un archivo primero para poder reemplazar sus colores quemados."
+    );
     return;
   }
 
@@ -66,14 +80,18 @@ async function fixAllInFile(getConfig: () => ExtensionConfig, getTheme: () => Pa
   );
 }
 
-async function fixAllInWorkspace(getConfig: () => ExtensionConfig, getTheme: () => ParsedTheme): Promise<void> {
+/** Handler for {@link FIX_ALL_IN_WORKSPACE_COMMAND}. Asks for confirmation before touching multiple files. */
+async function fixAllInWorkspace(
+  getConfig: () => ExtensionConfig,
+  getTheme: () => ParsedTheme
+): Promise<void> {
   const config = getConfig();
   if (warnIfThemeIsEmpty(config, getTheme())) return;
 
   const files = await findScannableFiles(config.languages);
   if (files.length === 0) {
     vscode.window.showInformationMessage(
-      "Tailwind Strict Colors: no hay archivos que coincidan con \"tailwindStrictColors.languages\" en este workspace."
+      'Tailwind Strict Colors: no hay archivos que coincidan con "tailwindStrictColors.languages" en este workspace.'
     );
     return;
   }
@@ -106,7 +124,9 @@ async function fixAllInWorkspace(getConfig: () => ExtensionConfig, getTheme: () 
   }
 
   if (totalReplacements === 0) {
-    vscode.window.showInformationMessage("Tailwind Strict Colors: no había colores quemados para reemplazar en el workspace.");
+    vscode.window.showInformationMessage(
+      "Tailwind Strict Colors: no había colores quemados para reemplazar en el workspace."
+    );
     return;
   }
 
@@ -123,12 +143,25 @@ async function fixAllInWorkspace(getConfig: () => ExtensionConfig, getTheme: () 
   );
 }
 
+/**
+ * Registers the "Fix All" commands (file scope and workspace scope).
+ *
+ * @param getConfig - Returns the current extension configuration on demand.
+ * @param getTheme - Returns the current parsed `@theme` on demand.
+ * @returns Disposables to push onto `context.subscriptions`.
+ * @example
+ * ```ts
+ * context.subscriptions.push(...registerFixAllCommands(() => config, () => themeWatcher.getTheme()));
+ * ```
+ */
 export function registerFixAllCommands(
   getConfig: () => ExtensionConfig,
   getTheme: () => ParsedTheme
 ): vscode.Disposable[] {
   return [
     vscode.commands.registerCommand(FIX_ALL_IN_FILE_COMMAND, () => fixAllInFile(getConfig, getTheme)),
-    vscode.commands.registerCommand(FIX_ALL_IN_WORKSPACE_COMMAND, () => fixAllInWorkspace(getConfig, getTheme)),
+    vscode.commands.registerCommand(FIX_ALL_IN_WORKSPACE_COMMAND, () =>
+      fixAllInWorkspace(getConfig, getTheme)
+    ),
   ];
 }

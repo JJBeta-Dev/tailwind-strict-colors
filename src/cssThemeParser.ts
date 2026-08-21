@@ -1,3 +1,4 @@
+/** A single `--color-*` custom property declared inside a project's `@theme`. */
 export interface ThemeToken {
   /** Token name without the `--color-` prefix, e.g. "brand-primary". */
   name: string;
@@ -7,16 +8,22 @@ export interface ThemeToken {
   resolvedHex?: string;
 }
 
+/** Result of parsing a project's CSS for `@theme` color tokens. */
 export interface ParsedTheme {
-  /** name -> token, includes every `--color-*` declared inside @theme blocks. */
+  /** Token name mapped to its token, one entry per `--color-*` declared inside `\@theme` blocks. */
   tokens: Map<string, ThemeToken>;
 }
 
+/** Strips `/* ... *\/` CSS comments so they can't be mistaken for real declarations. */
 function stripComments(css: string): string {
   return css.replace(/\/\*[\s\S]*?\*\//g, "");
 }
 
-/** Finds the substring of every top-level `@theme { ... }` (or `@theme inline { ... }`) block. */
+/**
+ * Finds the substring of every top-level `@theme { ... }` (or
+ * `@theme inline { ... }`) block, matching braces by hand so nested rules
+ * (e.g. a media query inside the theme block) don't confuse a naive regex.
+ */
 function extractThemeBlocks(css: string): string[] {
   const blocks: string[] = [];
   const atRuleRegex = /@theme\b[^{]*\{/g;
@@ -38,11 +45,14 @@ function extractThemeBlocks(css: string): string[] {
   return blocks;
 }
 
-function resolveValue(
-  rawValue: string,
-  rawDeclarations: Map<string, string>,
-  depth = 0
-): string | undefined {
+/**
+ * Attempts to resolve a CSS custom property value down to a hex color,
+ * following `var()` references up to 5 levels deep. Returns `undefined` for
+ * anything else (`oklch()`, `hsl()`, `color-mix()`, ...) — those are
+ * intentionally out of scope; see `colorDistance.ts` for the semantic
+ * fallback used when a token has no resolved hex.
+ */
+function resolveValue(rawValue: string, rawDeclarations: Map<string, string>, depth = 0): string | undefined {
   const value = rawValue.trim();
   if (depth > 5) return undefined;
 
@@ -52,9 +62,7 @@ function resolveValue(
   const rgbMatch = value.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
   if (rgbMatch) {
     const [, r, g, b] = rgbMatch;
-    return normalizeHex(
-      `#${[r, g, b].map((n) => Number(n).toString(16).padStart(2, "0")).join("")}`
-    );
+    return normalizeHex(`#${[r, g, b].map((n) => Number(n).toString(16).padStart(2, "0")).join("")}`);
   }
 
   const varMatch = value.match(/^var\(\s*(--[a-zA-Z0-9_-]+)\s*(?:,\s*([^)]+))?\)$/);
@@ -70,6 +78,7 @@ function resolveValue(
   return undefined;
 }
 
+/** Lowercases a hex color and expands the 3-digit shorthand form (e.g. `#f0a` becomes `#ff00aa`). */
 function normalizeHex(hex: string): string {
   if (hex.length === 4) {
     const [, r, g, b] = hex;
@@ -82,6 +91,17 @@ function normalizeHex(hex: string): string {
  * Parses one or more CSS source strings for `@theme` blocks and returns every
  * `--color-*` custom property declared inside them, resolved to a hex color
  * where possible.
+ *
+ * @param cssSources - Raw contents of one or more CSS files (e.g. every file
+ * matched by `tailwindStrictColors.themeFileGlob` across a workspace).
+ * @returns The combined set of theme tokens declared across all sources.
+ * @example
+ * ```ts
+ * const { tokens } = parseTheme([
+ *   "@theme { --color-brand-primary: #2563eb; }",
+ * ]);
+ * tokens.get("brand-primary")?.resolvedHex; // "#2563eb"
+ * ```
  */
 export function parseTheme(cssSources: string[]): ParsedTheme {
   const tokens = new Map<string, ThemeToken>();

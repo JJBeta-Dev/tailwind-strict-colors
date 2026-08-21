@@ -14,12 +14,25 @@ export class ThemeWatcher implements vscode.Disposable {
   private readonly onDidChangeEmitter = new vscode.EventEmitter<void>();
   readonly onDidChange = this.onDidChangeEmitter.event;
 
+  /** @param globPattern - Value of `tailwindStrictColors.themeFileGlob`, e.g. `"**\/index.css"`. */
   constructor(private globPattern: string) {}
 
+  /** Returns the most recently parsed theme (empty tokens map before the first {@link start}/refresh). */
   getTheme(): ParsedTheme {
     return this.theme;
   }
 
+  /**
+   * Runs the first parse and starts watching matching files for changes.
+   * Call once during `activate()`; await it before doing an initial scan so
+   * the theme is ready.
+   *
+   * @example
+   * ```ts
+   * const watcher = new ThemeWatcher(config.themeFileGlob);
+   * await watcher.start();
+   * ```
+   */
   async start(): Promise<void> {
     await this.refresh();
     this.watcher = vscode.workspace.createFileSystemWatcher(`**/${this.stripLeadingGlob()}`);
@@ -31,6 +44,12 @@ export class ThemeWatcher implements vscode.Disposable {
     );
   }
 
+  /**
+   * Switches to a new glob pattern (e.g. after the user edits
+   * `tailwindStrictColors.themeFileGlob`) and re-runs {@link start} against it.
+   *
+   * @param pattern - The new glob pattern to watch.
+   */
   async setGlobPattern(pattern: string): Promise<void> {
     this.globPattern = pattern;
     this.watcher?.dispose();

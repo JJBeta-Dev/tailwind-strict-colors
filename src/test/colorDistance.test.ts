@@ -14,7 +14,13 @@ function tokens(entries: Array<[string, Partial<ThemeToken>]>): Map<string, Them
 
 test("ranks the closest resolved hex color first", () => {
   const match: BurnedColorMatch = {
-    start: 0, end: 0, text: "bg-red-500", utility: "bg", kind: "chromatic", family: "red", shade: "500",
+    start: 0,
+    end: 0,
+    text: "bg-red-500",
+    utility: "bg",
+    kind: "chromatic",
+    family: "red",
+    shade: "500",
   };
   const themeTokens = tokens([
     ["brand-far", { resolvedHex: "#00ff00" }],
@@ -28,7 +34,13 @@ test("ranks the closest resolved hex color first", () => {
 
 test("falls back to semantic synonyms when no hex can be resolved", () => {
   const match: BurnedColorMatch = {
-    start: 0, end: 0, text: "bg-red-500", utility: "bg", kind: "chromatic", family: "red", shade: "500",
+    start: 0,
+    end: 0,
+    text: "bg-red-500",
+    utility: "bg",
+    kind: "chromatic",
+    family: "red",
+    shade: "500",
   };
   const themeTokens = tokens([
     ["brand-neutral", {}],
@@ -41,10 +53,19 @@ test("falls back to semantic synonyms when no hex can be resolved", () => {
 
 test("respects maxSuggestions", () => {
   const match: BurnedColorMatch = {
-    start: 0, end: 0, text: "text-blue-500", utility: "text", kind: "chromatic", family: "blue", shade: "500",
+    start: 0,
+    end: 0,
+    text: "text-blue-500",
+    utility: "text",
+    kind: "chromatic",
+    family: "blue",
+    shade: "500",
   };
   const themeTokens = tokens([
-    ["a", {}], ["b", {}], ["c", {}], ["d", {}],
+    ["a", {}],
+    ["b", {}],
+    ["c", {}],
+    ["d", {}],
   ]);
 
   const suggestions = rankSuggestions(match, themeTokens, 2);

@@ -1,18 +1,16 @@
 import { BurnedColorMatch } from "./colorScanner";
 import { ThemeToken } from "./cssThemeParser";
-import {
-  FAMILY_SYNONYMS,
-  hexForBareKeyword,
-  hexForShade,
-  isChromaticFamily,
-} from "./tailwindPalette";
+import { FAMILY_SYNONYMS, hexForBareKeyword, hexForShade, isChromaticFamily } from "./tailwindPalette";
 
+/** A single theme-token replacement suggestion for a burned color. */
 export interface Suggestion {
+  /** Theme token name, e.g. `"brand-danger"`. */
   tokenName: string;
   /** Replacement class, e.g. "bg-brand-danger". */
   replacementClass: string;
 }
 
+/** Parses a 6-digit hex color into `[r, g, b]`, or `undefined` if malformed. */
 function hexToRgb(hex: string): [number, number, number] | undefined {
   const clean = hex.replace("#", "");
   if (clean.length !== 6) return undefined;
@@ -34,11 +32,10 @@ function colorDistance(hexA: string, hexB: string): number | undefined {
   const dg = g1 - g2;
   const db = b1 - b2;
 
-  return Math.sqrt(
-    (2 + redMean / 256) * dr * dr + 4 * dg * dg + (2 + (255 - redMean) / 256) * db * db
-  );
+  return Math.sqrt((2 + redMean / 256) * dr * dr + 4 * dg * dg + (2 + (255 - redMean) / 256) * db * db);
 }
 
+/** Resolves the default Tailwind hex color a burned match actually renders as. */
 function burnedHex(match: BurnedColorMatch): string | undefined {
   if (match.kind === "chromatic" && isChromaticFamily(match.family) && match.shade) {
     return hexForShade(match.family, match.shade as never);
@@ -49,6 +46,11 @@ function burnedHex(match: BurnedColorMatch): string | undefined {
   return undefined;
 }
 
+/**
+ * Counts how many of the burned family's semantic synonyms (danger, warning,
+ * success, ...) appear in a candidate token's name. Used as the fallback
+ * ranking signal when neither side resolves to a real hex color.
+ */
 function synonymScore(tokenName: string, match: BurnedColorMatch): number {
   if (match.kind !== "chromatic") return 0;
   const synonyms = FAMILY_SYNONYMS[match.family as keyof typeof FAMILY_SYNONYMS] ?? [];
@@ -60,6 +62,18 @@ function synonymScore(tokenName: string, match: BurnedColorMatch): number {
  * Ranks the user's theme tokens as replacement candidates for a burned color.
  * Prefers actual color distance when both sides resolve to a hex value;
  * falls back to semantic name matching (danger/warning/success/...) otherwise.
+ *
+ * @param match - The burned color occurrence to find replacements for.
+ * @param tokens - The project's theme tokens, e.g. `theme.tokens` from {@link parseTheme}.
+ * @param maxSuggestions - Maximum number of suggestions to return (best first).
+ * @returns Ranked replacement suggestions, closest/most relevant first.
+ * @example
+ * ```ts
+ * const { tokens } = parseTheme(["@theme { --color-brand-danger: #ef4444; }"]);
+ * const [match] = scanForBurnedColors("bg-red-500", { utilities: ["bg"], ignoredColorNames: [] }, { tokens });
+ * rankSuggestions(match, tokens, 3);
+ * // [{ tokenName: "brand-danger", replacementClass: "bg-brand-danger" }]
+ * ```
  */
 export function rankSuggestions(
   match: BurnedColorMatch,
@@ -70,8 +84,7 @@ export function rankSuggestions(
   const candidates = [...tokens.values()];
 
   const scored = candidates.map((token) => {
-    const distance =
-      target && token.resolvedHex ? colorDistance(target, token.resolvedHex) : undefined;
+    const distance = target && token.resolvedHex ? colorDistance(target, token.resolvedHex) : undefined;
     return { token, distance, synonyms: synonymScore(token.name, match) };
   });
 
