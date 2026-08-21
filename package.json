@@ -1,0 +1,180 @@
+{
+  "name": "tailwind-strict-colors",
+  "displayName": "Tailwind Strict Colors",
+  "description": "Detecta colores quemados de la paleta default de Tailwind CSS v4 y sugiere reemplazarlos por los tokens definidos en tu @theme.",
+  "version": "0.1.0",
+  "publisher": "JJBeta",
+  "license": "MIT",
+  "icon": "media/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JJBeta-Dev/tailwind-strict-colors.git"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Linters"
+  ],
+  "keywords": [
+    "tailwind",
+    "tailwindcss",
+    "design-system",
+    "lint",
+    "colors"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "tailwindStrictColors.fixAllInFile",
+        "title": "Tailwind Strict Colors: Reemplazar todos los colores quemados (archivo actual)"
+      },
+      {
+        "command": "tailwindStrictColors.fixAllInWorkspace",
+        "title": "Tailwind Strict Colors: Reemplazar todos los colores quemados (workspace)",
+        "icon": "$(wand)"
+      },
+      {
+        "command": "tailwindStrictColors.refreshProblemsView",
+        "title": "Tailwind Strict Colors: Actualizar escaneo del proyecto",
+        "icon": "$(refresh)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "tailwindStrictColors",
+          "title": "Tailwind Strict Colors",
+          "icon": "media/icon-activity.svg"
+        }
+      ]
+    },
+    "views": {
+      "tailwindStrictColors": [
+        {
+          "id": "tailwindStrictColors.problemsView",
+          "name": "Colores quemados",
+          "type": "webview"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "tailwindStrictColors.fixAllInWorkspace",
+          "when": "view == tailwindStrictColors.problemsView",
+          "group": "navigation@1"
+        },
+        {
+          "command": "tailwindStrictColors.refreshProblemsView",
+          "when": "view == tailwindStrictColors.problemsView",
+          "group": "navigation@2"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Tailwind Strict Colors",
+      "properties": {
+        "tailwindStrictColors.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Activa o desactiva la detección de colores quemados."
+        },
+        "tailwindStrictColors.themeFileGlob": {
+          "type": "string",
+          "default": "**/index.css",
+          "description": "Glob (relativo a cada carpeta del workspace) usado para encontrar el archivo CSS donde defines tu bloque @theme."
+        },
+        "tailwindStrictColors.languages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "javascript",
+            "javascriptreact",
+            "typescript",
+            "typescriptreact",
+            "html",
+            "vue",
+            "svelte",
+            "astro"
+          ],
+          "description": "Lenguajes en los que se analizan las clases de Tailwind."
+        },
+        "tailwindStrictColors.utilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "bg",
+            "text",
+            "border",
+            "border-t",
+            "border-r",
+            "border-b",
+            "border-l",
+            "ring",
+            "ring-offset",
+            "fill",
+            "stroke",
+            "from",
+            "via",
+            "to",
+            "divide",
+            "outline",
+            "decoration",
+            "caret",
+            "accent",
+            "shadow",
+            "placeholder"
+          ],
+          "description": "Prefijos de utilidades de Tailwind a inspeccionar (bg-, text-, border-, etc.)."
+        },
+        "tailwindStrictColors.ignoredColorNames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "inherit",
+            "current",
+            "transparent",
+            "black",
+            "white"
+          ],
+          "description": "Nombres de color que nunca se reportan como quemados (no tienen shade numérico)."
+        },
+        "tailwindStrictColors.maxSuggestions": {
+          "type": "number",
+          "default": 5,
+          "description": "Número máximo de sugerencias de Quick Fix por color quemado."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test src/test/*.test.ts",
+    "vscode:prepublish": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/codicons": "^0.0.46-24",
+    "esbuild": "^0.23.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0"
+  },
+  "allowScripts": {
+    "esbuild@0.23.1": true,
+    "esbuild@0.28.2": true
+  }
+}
