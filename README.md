@@ -17,6 +17,9 @@ clases de Tailwind CSS que usan un color de la **paleta default** (`bg-red-500`,
 No depende de ESLint ni de ningún archivo de configuración en la raíz del
 proyecto: lee directamente el `@theme` de tu CSS.
 
+El código está escrito en TypeScript y documentado con TSDoc en todo `src/`;
+ESLint valida esa sintaxis y el CI corre pruebas, tipos y formato en cada push.
+
 ## Cómo funciona
 
 1. Busca el archivo CSS de tu workspace que hace match con
