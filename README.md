@@ -3,6 +3,12 @@
 [![CI](https://github.com/JJBeta-Dev/tailwind-strict-colors/actions/workflows/ci.yml/badge.svg)](https://github.com/JJBeta-Dev/tailwind-strict-colors/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
+<p align="center">
+  <img src="docs/demo.gif" width="100%" alt="Demo: en Card.tsx la clase text-red-500 aparece subrayada; al pasar el mouse, el hover sugiere tokens de tu @theme (text-brand-danger, text-neutral-fg, text-brand-primary) y al hacer clic en Reemplazar la clase cambia a text-brand-danger y el contador baja de 3 a 2 colores quemados.">
+</p>
+
+**Instalar:** descarga el `.vsix` desde [Releases](https://github.com/JJBeta-Dev/tailwind-strict-colors/releases/latest) y en VS Code / Antigravity: _Extensions_ → `...` → _Install from VSIX..._
+
 Extensión para editores basados en VS Code (Antigravity incluido) que detecta
 clases de Tailwind CSS que usan un color de la **paleta default** (`bg-red-500`,
 `text-gray-200`, `border-white`, ...) en vez de un token definido en tu propio
@@ -128,4 +134,3 @@ de las decisiones no obvias.
   de JSX/Vue/Svelte), igual que hace Tailwind IntelliSense; cubre `className`,
   `class`, `clsx()`, `cva()`, etc. porque no depende de la sintaxis del
   lenguaje, solo del patrón `utilidad-color-shade`.
-

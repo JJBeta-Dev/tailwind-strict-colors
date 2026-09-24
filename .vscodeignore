@@ -7,3 +7,4 @@ tsconfig.json
 .vscode/**
 media/icon-marketplace.svg
 CLAUDE.md
+docs/**
